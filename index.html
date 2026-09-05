@@ -1,0 +1,1675 @@
+<!doctype html>
+<html lang="fi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Kyvykkyysmittari</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png" type="image/png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="theme-color" content="#14514a">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Kyvykkyysmittari">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
+
+  :root {
+    --bg: #f5f7f6;
+    --surface: #ffffff;
+    --surface-alt: #eef2f0;
+    --border: #d9e0dc;
+    --border-strong: #c1cbc5;
+    --ink: #1b2422;
+    --ink-soft: #55625c;
+    --ink-faint: #8b9791;
+    --accent: #1f6f64;
+    --accent-soft: #e4f0ed;
+    --accent-strong: #14514a;
+    --good: #2f7d4f;
+    --good-soft: #e6f3ea;
+    --warn: #97650a;
+    --warn-soft: #faf0dd;
+    --bad: #b3392c;
+    --bad-soft: #fbeae7;
+    --shadow: 0 1px 2px rgba(20,30,28,0.07), 0 2px 8px rgba(20,30,28,0.05);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #101512;
+      --surface: #171e1a;
+      --surface-alt: #1d2521;
+      --border: #2a332d;
+      --border-strong: #3a453d;
+      --ink: #e7ece9;
+      --ink-soft: #a9b5ae;
+      --ink-faint: #6c7873;
+      --accent: #4fb3a1;
+      --accent-soft: #1a3430;
+      --accent-strong: #85d4c5;
+      --good: #59b57e;
+      --good-soft: #16311f;
+      --warn: #d9a53f;
+      --warn-soft: #362a12;
+      --bad: #e07767;
+      --bad-soft: #3a1e19;
+      --shadow: 0 1px 2px rgba(0,0,0,0.4), 0 4px 14px rgba(0,0,0,0.3);
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #101512;
+    --surface: #171e1a;
+    --surface-alt: #1d2521;
+    --border: #2a332d;
+    --border-strong: #3a453d;
+    --ink: #e7ece9;
+    --ink-soft: #a9b5ae;
+    --ink-faint: #6c7873;
+    --accent: #4fb3a1;
+    --accent-soft: #1a3430;
+    --accent-strong: #85d4c5;
+    --good: #59b57e;
+    --good-soft: #16311f;
+    --warn: #d9a53f;
+    --warn-soft: #362a12;
+    --bad: #e07767;
+    --bad-soft: #3a1e19;
+    --shadow: 0 1px 2px rgba(0,0,0,0.4), 0 4px 14px rgba(0,0,0,0.3);
+  }
+
+  * { box-sizing: border-box; }
+  html { color-scheme: light dark; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: 'IBM Plex Sans', system-ui, -apple-system, sans-serif;
+    font-size: 14px;
+    line-height: 1.45;
+  }
+  .num, .tabular { font-family: 'IBM Plex Mono', 'SFMono-Regular', monospace; font-variant-numeric: tabular-nums; }
+
+  #topbar {
+    display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    height: 56px; padding: 0 20px; background: var(--surface); border-bottom: 1px solid var(--border);
+    position: sticky; top: 0; z-index: 10;
+  }
+  #app { display: grid; grid-template-columns: 272px 1fr; min-height: calc(100vh - 56px); }
+  @media (max-width: 860px) {
+    #app { grid-template-columns: 1fr; }
+    .sidebar { border-right: none; border-bottom: 1px solid var(--border); }
+  }
+
+  .sidebar {
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    padding: 20px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    min-height: calc(100vh - 56px);
+  }
+  @media (max-width: 860px) { .sidebar { min-height: auto; } }
+
+  .brand { display: flex; align-items: center; gap: 9px; }
+  .brand-mark {
+    width: 26px; height: 26px; border-radius: 6px;
+    background: var(--accent); color: #fff;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 13px; flex: none;
+  }
+  .brand-text { font-weight: 600; font-size: 14.5px; letter-spacing: -0.01em; }
+  .brand-sub { font-size: 11px; color: var(--ink-faint); margin-top: 1px; }
+  .brand-line { display: flex; align-items: baseline; gap: 7px; }
+  .brand-line .brand-sub { margin-top: 0; }
+
+  .btn {
+    appearance: none; border: 1px solid var(--border-strong); background: var(--surface);
+    color: var(--ink); border-radius: 7px; padding: 8px 12px; font-size: 13px; font-weight: 500;
+    cursor: pointer; font-family: inherit; display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+    transition: background .12s, border-color .12s;
+  }
+  .btn:hover { background: var(--surface-alt); }
+  .btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+  .btn-primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .btn-primary:hover { background: var(--accent-strong); border-color: var(--accent-strong); }
+  .btn-full { width: 100%; }
+  .btn-sm { padding: 5px 9px; font-size: 12px; border-radius: 6px; }
+  .btn-ghost { border-color: transparent; background: transparent; }
+  .btn-ghost:hover { background: var(--surface-alt); }
+  .btn-danger-ghost { border-color: transparent; background: transparent; color: var(--bad); }
+  .btn-danger-ghost:hover { background: var(--bad-soft); }
+  .btn-danger { background: var(--bad); border-color: var(--bad); color: #fff; }
+  .btn-danger:hover { filter: brightness(0.9); }
+
+  .table-list { display: flex; flex-direction: column; gap: 5px; overflow-y: auto; flex: 1; }
+  .table-item {
+    display: flex; align-items: center; gap: 8px; padding: 9px 9px;
+    border-radius: 8px; cursor: pointer; border: 1px solid transparent; text-align: left;
+    background: none; width: 100%; font-family: inherit; color: var(--ink);
+  }
+  .table-item:hover { background: var(--surface-alt); }
+  .table-item.active { background: var(--accent-soft); border-color: var(--accent); }
+  .table-item-name { font-weight: 500; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .table-item-meta { font-size: 11px; color: var(--ink-faint); }
+  .table-item-main { flex: 1; min-width: 0; }
+
+  .badge {
+    display: inline-flex; align-items: center; gap: 4px; padding: 2px 7px; border-radius: 20px;
+    font-size: 11px; font-weight: 600; white-space: nowrap; flex: none;
+  }
+  .badge-dot { width: 6px; height: 6px; border-radius: 50%; }
+  .badge-good { background: var(--good-soft); color: var(--good); }
+  .badge-warn { background: var(--warn-soft); color: var(--warn); }
+  .badge-bad { background: var(--bad-soft); color: var(--bad); }
+  .badge-neutral { background: var(--surface-alt); color: var(--ink-faint); }
+
+  .empty-sidebar { font-size: 12px; color: var(--ink-faint); padding: 10px 4px; }
+
+  .sidebar-footer { font-size: 11px; color: var(--ink-faint); padding-top: 8px; border-top: 1px solid var(--border); }
+
+  .banner {
+    font-size: 12.5px; padding: 9px 12px; border-radius: 8px; margin: 0 0 4px;
+    background: var(--warn-soft); color: var(--warn); border: 1px solid color-mix(in srgb, var(--warn) 35%, transparent);
+  }
+
+  .main { padding: 28px 34px 60px; max-width: 1180px; }
+  @media (max-width: 640px) { .main { padding: 20px 16px 48px; } }
+
+  .empty-state {
+    display: flex; flex-direction: column; align-items: flex-start; gap: 10px;
+    max-width: 460px; margin-top: 60px;
+  }
+  .empty-state h1 { font-size: 20px; margin: 0; }
+  .empty-state p { color: var(--ink-soft); margin: 0; font-size: 13.5px; }
+
+  .detail-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 18px; flex-wrap: wrap; }
+  .detail-title-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .detail-title {
+    font-size: 21px; font-weight: 600; border: 1px solid transparent; border-radius: 6px;
+    padding: 3px 6px; margin: -3px -6px; background: transparent; color: var(--ink); font-family: inherit;
+    min-width: 60px;
+  }
+  .detail-title:hover, .detail-title:focus { border-color: var(--border-strong); background: var(--surface); }
+  .detail-sub { font-size: 12.5px; color: var(--ink-faint); margin-top: 3px; }
+  .header-actions { display: flex; gap: 8px; }
+
+  .panel {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+    padding: 18px 20px; margin-bottom: 18px; box-shadow: var(--shadow);
+  }
+  .panel-title { font-size: 12.5px; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; color: var(--ink-faint); margin: 0 0 14px; }
+
+  .spec-panel.collapsed { padding: 10px 20px; }
+  .spec-toggle {
+    display: flex; align-items: center; gap: 14px; width: 100%; background: none; border: none;
+    padding: 0; margin: 0; cursor: pointer; font-family: inherit; color: var(--ink); text-align: left;
+  }
+  .spec-panel:not(.collapsed) .spec-toggle { margin-bottom: 14px; }
+  .spec-summary { font-family: 'IBM Plex Mono', monospace; font-size: 13px; color: var(--ink-soft); flex: 1; }
+  .chevron { font-size: 12px; color: var(--accent); font-weight: 600; white-space: nowrap; }
+
+  .entry-panel-sticky { position: sticky; top: 70px; z-index: 4; }
+  @media (max-width: 640px) {
+    .entry-panel-sticky { position: static; }
+  }
+
+  .data-panel-title-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+  .data-panel-actions { display: flex; align-items: center; gap: 10px; }
+  .data-panel-toggle {
+    display: none; align-items: center; gap: 4px; background: none; border: none; padding: 2px 4px;
+    margin: 0; cursor: pointer; font-family: inherit; font-size: 12px; font-weight: 600; color: var(--accent);
+  }
+  @media (max-width: 640px) {
+    .data-panel-toggle { display: inline-flex; }
+    .data-body.collapsed { display: none; }
+  }
+
+  .spec-grid { display: flex; gap: 26px; flex-wrap: wrap; align-items: flex-end; }
+  .field { display: flex; flex-direction: column; gap: 5px; }
+  .field label { font-size: 11.5px; color: var(--ink-soft); font-weight: 500; }
+  .field input, .field select {
+    font-family: 'IBM Plex Mono', monospace; font-size: 13.5px; padding: 7px 9px;
+    border: 1px solid var(--border-strong); border-radius: 7px; background: var(--surface); color: var(--ink);
+    width: 118px;
+  }
+  .field select { font-family: 'IBM Plex Sans', sans-serif; width: auto; min-width: 150px; }
+  .field input:focus, .field select:focus { outline: 2px solid var(--accent); outline-offset: 0; border-color: var(--accent); }
+
+  .mode-toggle { display: inline-flex; border: 1px solid var(--border-strong); border-radius: 8px; overflow: hidden; }
+  .mode-toggle button {
+    border: none; background: var(--surface); color: var(--ink-soft); padding: 7px 12px; font-size: 12.5px;
+    cursor: pointer; font-family: inherit; font-weight: 500;
+  }
+  .mode-toggle button + button { border-left: 1px solid var(--border-strong); }
+  .mode-toggle button.active { background: var(--accent); color: #fff; }
+
+  .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); background: var(--surface); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; margin-bottom: 18px; box-shadow: var(--shadow); }
+  .kpi-tile { background: var(--surface); padding: 14px 16px; display: flex; flex-direction: column; gap: 5px; border-right: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+  .kpi-tile.hero { background: var(--accent-soft); }
+  .kpi-label { font-size: 11px; color: var(--ink-faint); font-weight: 500; text-transform: uppercase; letter-spacing: .04em; }
+  .kpi-value { font-size: 21px; font-weight: 600; font-family: 'IBM Plex Mono', monospace; letter-spacing: -0.01em; }
+  .kpi-value.good { color: var(--good); }
+  .kpi-value.warn { color: var(--warn); }
+  .kpi-value.bad { color: var(--bad); }
+  .kpi-note { font-size: 10.5px; color: var(--ink-faint); }
+
+  .charts-row { display: grid; grid-template-columns: 1.1fr 1fr; gap: 18px; }
+  @media (max-width: 900px) { .charts-row { grid-template-columns: 1fr; } }
+
+  .chart-caption { font-size: 11.5px; color: var(--ink-faint); margin-top: 8px; display: flex; gap: 14px; flex-wrap: wrap; }
+  .legend-item { display: inline-flex; align-items: center; gap: 5px; }
+  .legend-swatch { width: 10px; height: 2.5px; border-radius: 2px; display: inline-block; }
+  .legend-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+
+  .entry-grid { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  .entry-grid input {
+    width: 84px; font-family: 'IBM Plex Mono', monospace; font-size: 13.5px; padding: 7px 9px;
+    border: 1px solid var(--border-strong); border-radius: 7px; background: var(--surface); color: var(--ink);
+  }
+  .entry-grid input:focus { outline: 2px solid var(--accent); border-color: var(--accent); }
+
+  .paste-area { margin-top: 12px; }
+  .paste-area textarea {
+    width: 100%; min-height: 74px; font-family: 'IBM Plex Mono', monospace; font-size: 12.5px;
+    border: 1px solid var(--border-strong); border-radius: 8px; padding: 9px 10px; background: var(--surface);
+    color: var(--ink); resize: vertical;
+  }
+  .paste-area textarea:focus { outline: 2px solid var(--accent); border-color: var(--accent); }
+  .link-btn { background: none; border: none; color: var(--accent); font-size: 12.5px; cursor: pointer; padding: 0; font-family: inherit; font-weight: 500; }
+  .link-btn:hover { color: var(--accent-strong); text-decoration: underline; }
+
+  .data-table-wrap { max-height: 220px; overflow-y: auto; border: 1px solid var(--border); border-radius: 8px; margin-top: 12px; }
+  table.data-table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+  table.data-table th { position: sticky; top: 0; background: var(--surface-alt); text-align: left; padding: 6px 10px; font-weight: 600; color: var(--ink-soft); font-size: 11px; text-transform: uppercase; letter-spacing: .03em; }
+  table.data-table td { padding: 5px 10px; border-top: 1px solid var(--border); font-family: 'IBM Plex Mono', monospace; }
+  table.data-table td.out-spec { color: var(--bad); font-weight: 600; }
+  table.data-table td.out-ctrl { color: var(--warn); font-weight: 600; }
+  table.data-table tr:hover { background: var(--surface-alt); }
+  .row-del { background: none; border: none; color: var(--ink-faint); cursor: pointer; font-size: 13px; padding: 2px 5px; border-radius: 4px; }
+  .row-del:hover { color: var(--bad); background: var(--bad-soft); }
+  .row-edit { background: none; border: none; color: var(--ink-faint); cursor: pointer; font-size: 13px; padding: 2px 5px; border-radius: 4px; }
+  .row-edit:hover { color: var(--accent); background: var(--accent-soft); }
+  .edit-cell-input {
+    width: 78px; font-family: 'IBM Plex Mono', monospace; font-size: 12.5px; padding: 4px 6px;
+    border: 1px solid var(--accent); border-radius: 5px; background: var(--surface); color: var(--ink);
+  }
+  .edit-cell-input:focus { outline: 2px solid var(--accent); outline-offset: 0; }
+  .edit-cell-input.input-error { border-color: var(--bad); background: var(--bad-soft); }
+  .edit-error { color: var(--bad); font-size: 11.5px; margin-top: 6px; width: 100%; }
+
+  .muted-note { font-size: 12px; color: var(--ink-faint); margin-top: 10px; }
+  .insufficient { padding: 30px 10px; text-align: center; color: var(--ink-faint); font-size: 13px; }
+
+  .modal-overlay {
+    position: fixed; inset: 0; background: rgba(10,16,14,0.42); display: flex; align-items: center; justify-content: center;
+    z-index: 50; padding: 20px;
+  }
+  .modal {
+    background: var(--surface); border-radius: 14px; padding: 24px; width: 100%; max-width: 420px;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.25); display: flex; flex-direction: column; gap: 14px; max-height: 90vh; overflow-y: auto;
+  }
+  .modal h2 { margin: 0; font-size: 17px; }
+  .modal .field { gap: 5px; }
+  .modal .field input, .modal .field select { width: 100%; }
+  .modal-row { display: flex; gap: 12px; }
+  .modal-row .field { flex: 1; }
+  .modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 6px; }
+  .radio-row { display: flex; gap: 14px; }
+  .radio-opt { display: flex; align-items: center; gap: 6px; font-size: 13px; cursor: pointer; }
+
+  svg text { font-family: 'IBM Plex Mono', monospace; }
+  .axis-line { stroke: var(--border-strong); stroke-width: 1; }
+  .axis-label { fill: var(--ink-faint); font-size: 10px; }
+  .grid-line { stroke: var(--border); stroke-width: 1; stroke-dasharray: 2 3; }
+  .hist-bar { fill: var(--accent); opacity: 0.72; }
+  .normal-curve { fill: none; stroke: var(--accent-strong); stroke-width: 1.6; }
+  .limit-usl { stroke: var(--bad); stroke-width: 1.4; stroke-dasharray: 4 3; }
+  .limit-target { stroke: var(--ink-faint); stroke-width: 1.2; stroke-dasharray: 1 3; }
+  .limit-center { stroke: var(--accent); stroke-width: 1.3; }
+  .limit-ctrl { stroke: var(--warn); stroke-width: 1.2; stroke-dasharray: 4 3; }
+  .run-line { fill: none; stroke: var(--ink-faint); stroke-width: 1.2; }
+  .pt-ok { fill: var(--accent-strong); }
+  .pt-warn { fill: var(--warn); }
+  .pt-bad { fill: var(--bad); }
+  .limit-tag { font-size: 9px; fill: var(--ink-faint); }
+
+  /* ---------- auth screen ---------- */
+  .auth-wrap { grid-column: 1 / -1; width: 100%; min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 24px; }
+  .auth-card { width: 100%; max-width: 380px; background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 28px; box-shadow: var(--shadow); display: flex; flex-direction: column; gap: 16px; }
+  .auth-card h1 { font-size: 19px; margin: 0; }
+  .auth-card p.auth-sub { margin: 0; color: var(--ink-soft); font-size: 13px; }
+  .auth-field { display: flex; flex-direction: column; gap: 5px; }
+  .auth-field label { font-size: 12px; color: var(--ink-soft); font-weight: 500; }
+  .auth-field input {
+    font-family: inherit; font-size: 14px; padding: 9px 11px; border: 1px solid var(--border-strong);
+    border-radius: 8px; background: var(--surface); color: var(--ink); width: 100%;
+  }
+  .auth-field input:focus { outline: 2px solid var(--accent); border-color: var(--accent); }
+  .auth-error { font-size: 12.5px; color: var(--bad); background: var(--bad-soft); border-radius: 7px; padding: 8px 10px; }
+  .auth-notice { font-size: 12.5px; color: var(--good); background: var(--good-soft); border-radius: 7px; padding: 8px 10px; }
+  .auth-switch { font-size: 13px; color: var(--ink-soft); text-align: center; }
+  .auth-loading { grid-column: 1 / -1; width: 100%; text-align: center; color: var(--ink-faint); font-size: 13px; padding: 60px 0; }
+</style>
+</head>
+<body>
+
+<div id="topbar"></div>
+<div id="app"></div>
+
+<div id="modal-root"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ---------- statistics helpers ---------- */
+
+  var CHART_CONST = {
+    2:{A2:1.880,D3:0,D4:3.267,d2:1.128},
+    3:{A2:1.023,D3:0,D4:2.574,d2:1.693},
+    4:{A2:0.729,D3:0,D4:2.282,d2:2.059},
+    5:{A2:0.577,D3:0,D4:2.114,d2:2.326},
+    6:{A2:0.483,D3:0,D4:2.004,d2:2.534},
+    7:{A2:0.419,D3:0.076,D4:1.924,d2:2.704},
+    8:{A2:0.373,D3:0.136,D4:1.864,d2:2.847},
+    9:{A2:0.337,D3:0.184,D4:1.816,d2:2.970},
+    10:{A2:0.308,D3:0.223,D4:1.777,d2:3.078}
+  };
+
+  function mean(arr){ if(!arr.length) return NaN; var s=0; for(var i=0;i<arr.length;i++) s+=arr[i]; return s/arr.length; }
+  function sampleStd(arr){
+    var n=arr.length; if(n<2) return null;
+    var m=mean(arr), ss=0;
+    for(var i=0;i<n;i++){ var d=arr[i]-m; ss+=d*d; }
+    return Math.sqrt(ss/(n-1));
+  }
+
+  function erf(x){
+    var sign = x<0 ? -1 : 1; x=Math.abs(x);
+    var a1=0.254829592,a2=-0.284496736,a3=1.421413741,a4=-1.453152027,a5=1.061405429,p=0.3275911;
+    var t=1/(1+p*x);
+    var y=1-(((((a5*t+a4)*t)+a3)*t+a2)*t+a1)*t*Math.exp(-x*x);
+    return sign*y;
+  }
+  function normalCDF(x, m, sd){
+    if(!sd || sd<=0) return x>=m?1:0;
+    return 0.5*(1+erf((x-m)/(sd*Math.SQRT2)));
+  }
+  function normalPDF(x, m, sd){
+    if(!sd || sd<=0) return 0;
+    var z=(x-m)/sd;
+    return Math.exp(-0.5*z*z)/(sd*Math.sqrt(2*Math.PI));
+  }
+  function inverseNormalCDF(p){
+    if(p<=0) return -Infinity;
+    if(p>=1) return Infinity;
+    var a=[-3.969683028665376e+01,2.209460984245205e+02,-2.759285104469687e+02,1.383577518672690e+02,-3.066479806614716e+01,2.506628277459239e+00];
+    var b=[-5.447609879822406e+01,1.615858368580409e+02,-1.556989798598866e+02,6.680131188771972e+01,-1.328068155288572e+01];
+    var c=[-7.784894002430293e-03,-3.223964580411365e-01,-2.400758277161838e+00,-2.549732539343734e+00,4.374664141464968e+00,2.938163982698783e+00];
+    var d=[7.784695709041462e-03,3.224671290700398e-01,2.445134137142996e+00,3.754408661907416e+00];
+    var pl=0.02425, ph=1-pl, q, r;
+    if(p<pl){ q=Math.sqrt(-2*Math.log(p)); return (((((c[0]*q+c[1])*q+c[2])*q+c[3])*q+c[4])*q+c[5])/((((d[0]*q+d[1])*q+d[2])*q+d[3])*q+1); }
+    if(p<=ph){ q=p-0.5; r=q*q; return (((((a[0]*r+a[1])*r+a[2])*r+a[3])*r+a[4])*r+a[5])*q/(((((b[0]*r+b[1])*r+b[2])*r+b[3])*r+b[4])*r+1); }
+    q=Math.sqrt(-2*Math.log(1-p));
+    return -(((((c[0]*q+c[1])*q+c[2])*q+c[3])*q+c[4])*q+c[5])/((((d[0]*q+d[1])*q+d[2])*q+d[3])*q+1);
+  }
+
+  function groupSize(t){ return t.mode==='subgroup' ? (t.subgroupSize||2) : 1; }
+
+  function computeStats(t){
+    var values = t.values || [];
+    if(t.mode==='individual'){
+      if(values.length<2) return null;
+      var n=values.length;
+      var grandMean=mean(values);
+      var overallSigma=sampleStd(values);
+      var mrs=[]; for(var i=1;i<n;i++) mrs.push(Math.abs(values[i]-values[i-1]));
+      var mrBar=mean(mrs);
+      var withinSigma = mrBar/1.128;
+      var ucl=grandMean+2.66*mrBar, lcl=grandMean-2.66*mrBar;
+      var mrUcl=3.267*mrBar, mrLcl=0;
+      var points=values.map(function(v,i){return {x:i+1,y:v};});
+      var secondary=mrs.map(function(v,i){return {x:i+2,y:v};});
+      return {n:n, grandMean:grandMean, overallSigma:overallSigma, withinSigma:withinSigma,
+        centerLine:grandMean, ucl:ucl, lcl:lcl,
+        secondaryCenter:mrBar, secondaryUcl:mrUcl, secondaryLcl:mrLcl,
+        points:points, secondaryPoints:secondary, secondaryLabel:'Liukuva vaihteluväli (MR)',
+        allValues:values, primaryLabel:'Yksittäismittaus'};
+    } else {
+      var size=t.subgroupSize||2;
+      var k=Math.floor(values.length/size);
+      if(k<2) return null;
+      var subgroups=[]; for(var g=0; g<k; g++) subgroups.push(values.slice(g*size,(g+1)*size));
+      var subMeans=subgroups.map(mean);
+      var subRanges=subgroups.map(function(arr){return Math.max.apply(null,arr)-Math.min.apply(null,arr);});
+      var gMean=mean(subMeans);
+      var rBar=mean(subRanges);
+      var cc=CHART_CONST[size]||CHART_CONST[10];
+      var wSigma=rBar/cc.d2;
+      var u=gMean+cc.A2*rBar, l=gMean-cc.A2*rBar;
+      var rUcl=cc.D4*rBar, rLcl=cc.D3*rBar;
+      var flatAll=[]; subgroups.forEach(function(sg){ flatAll=flatAll.concat(sg); });
+      var oSigma=sampleStd(flatAll);
+      var pts=subMeans.map(function(v,i){return {x:i+1,y:v};});
+      var sec=subRanges.map(function(v,i){return {x:i+1,y:v};});
+      return {n:flatAll.length, grandMean:gMean, overallSigma:oSigma, withinSigma:wSigma,
+        centerLine:gMean, ucl:u, lcl:l,
+        secondaryCenter:rBar, secondaryUcl:rUcl, secondaryLcl:rLcl,
+        points:pts, secondaryPoints:sec, secondaryLabel:'Alaryhmän vaihteluväli (R)',
+        allValues:flatAll, k:k, primaryLabel:'Alaryhmän keskiarvo'};
+    }
+  }
+
+  function capability(stats, usl, lsl){
+    var res={};
+    var hasU = usl!=null && usl!=='' && !isNaN(usl);
+    var hasL = lsl!=null && lsl!=='' && !isNaN(lsl);
+    usl = hasU ? Number(usl) : null; lsl = hasL ? Number(lsl) : null;
+    var gm=stats.grandMean, ws=stats.withinSigma, os=stats.overallSigma;
+    if(ws>0){
+      if(hasU) res.cpu=(usl-gm)/(3*ws);
+      if(hasL) res.cpl=(gm-lsl)/(3*ws);
+      if(hasU&&hasL) res.cp=(usl-lsl)/(6*ws);
+      if(hasU||hasL) res.cpk=Math.min.apply(null,[res.cpu,res.cpl].filter(function(v){return v!=null;}));
+      var pS=0;
+      if(hasU) pS+=1-normalCDF(usl,gm,ws);
+      if(hasL) pS+=normalCDF(lsl,gm,ws);
+      if(hasU||hasL) res.sigmaShort = pS>0? inverseNormalCDF(1-pS) : Infinity;
+    }
+    if(os>0){
+      if(hasU) res.ppu=(usl-gm)/(3*os);
+      if(hasL) res.ppl=(gm-lsl)/(3*os);
+      if(hasU&&hasL) res.pp=(usl-lsl)/(6*os);
+      if(hasU||hasL) res.ppk=Math.min.apply(null,[res.ppu,res.ppl].filter(function(v){return v!=null;}));
+      var pL=0;
+      if(hasU) pL+=1-normalCDF(usl,gm,os);
+      if(hasL) pL+=normalCDF(lsl,gm,os);
+      if(hasU||hasL){ res.dpmo=pL*1e6; res.sigmaLong = pL>0? inverseNormalCDF(1-pL) : Infinity; }
+    }
+    res.hasU=hasU; res.hasL=hasL; res.usl=usl; res.lsl=lsl;
+    return res;
+  }
+
+  function capabilityStatus(cap){
+    var v = cap.cpk!=null ? cap.cpk : cap.ppk;
+    if(v==null || isNaN(v)) return {cls:'neutral', label:'—'};
+    if(v>=1.33) return {cls:'good', label:'Hyvä'};
+    if(v>=1.0) return {cls:'warn', label:'Rajallinen'};
+    return {cls:'bad', label:'Riittämätön'};
+  }
+
+  /* ---------- formatting ---------- */
+
+  function fmt(v, dec){
+    if(dec===undefined) dec=3;
+    if(v==null || isNaN(v) || !isFinite(v)) return '–';
+    return v.toLocaleString('fi-FI', {minimumFractionDigits:dec, maximumFractionDigits:dec});
+  }
+  function sigmaCapFmt(v){
+    if(v===Infinity) return '≥ 6,00';
+    if(v==null||isNaN(v)) return '–';
+    var capped = Math.min(v, 6);
+    var prefix = v>6 ? '≥ ' : '';
+    return prefix + capped.toLocaleString('fi-FI',{minimumFractionDigits:2, maximumFractionDigits:2});
+  }
+  function fmtInt(v){
+    if(v==null||isNaN(v)||!isFinite(v)) return '–';
+    return Math.round(v).toLocaleString('fi-FI');
+  }
+  function fmtIdx(v){
+    if(v==null || isNaN(v)) return '–';
+    if(v===Infinity) return '≥ 6,00';
+    return v.toLocaleString('fi-FI', {minimumFractionDigits:2, maximumFractionDigits:2});
+  }
+  function idxClass(v){
+    if(v==null||isNaN(v)) return '';
+    if(v>=1.33) return 'good';
+    if(v>=1.0) return 'warn';
+    return 'bad';
+  }
+
+  function tokenizeNumbers(text){
+    return text.split(/[\n\t; ]+/).map(function(s){return s.trim();}).filter(Boolean);
+  }
+  function parseNumberToken(tok){
+    if(tok==null) return null;
+    var norm = String(tok).trim().replace(',', '.');
+    if(norm==='') return null;
+    var v = parseFloat(norm);
+    return isNaN(v) ? null : v;
+  }
+
+  function uid(){ return 't'+Date.now().toString(36)+Math.random().toString(36).slice(2,8); }
+
+  /* ---------- state ---------- */
+
+  var tablesCache = {};
+  var currentTableId = null;
+  var connError = null; // set when a Supabase call fails, shown as a small banner
+  var pasteOpen = false;
+  var specOpen = false;
+  var editingKey = null; // "<tableId>|<groupStartIndex>" of the row currently in edit mode
+  var dataTableOpen = false; // mobile only: whether the "Tallennettu data" section is expanded
+  var lastRenderedTableId = undefined;
+  var quickValues = null; // array being built for quick-add row, reset per render
+  var themePref = loadThemePref(); // 'system' | 'light' | 'dark' -- a per-viewer display preference
+
+  var session = null; // current Supabase auth session, or null when signed out
+  var authChecking = true; // true until the initial getSession() check resolves once
+  var authBusy = false;
+  var authMode = 'signin'; // 'signin' | 'signup'
+  var authError = null;
+  var authNotice = null;
+  var authEmailDraft = '';
+  var authPasswordDraft = '';
+  var realtimeChannel = null;
+
+  var app = document.getElementById('app');
+  var topbarRoot = document.getElementById('topbar');
+  var modalRoot = document.getElementById('modal-root');
+
+  var SUPABASE_URL = 'https://zjfxawpglusjznbfqhak.supabase.co';
+  var SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpqZnhhd3BnbHVzanpuYmZxaGFrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg1MzYyMDksImV4cCI6MjEwNDExMjIwOX0.cC5bTuGf23PHaZt1x0feReU4ywyX1sKZcfRaOZe1jB8';
+  var supa = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  /* ---------- theme preference (per-viewer, kept in this browser only) ---------- */
+
+  function loadThemePref(){
+    try { return localStorage.getItem('kyvykkyysmittari-theme') || 'system'; } catch(e){ return 'system'; }
+  }
+  function saveThemePref(v){
+    try { localStorage.setItem('kyvykkyysmittari-theme', v); } catch(e){ /* private browsing etc. -- ignore */ }
+  }
+  function applyTheme(pref){
+    if(pref==='light') document.documentElement.setAttribute('data-theme', 'light');
+    else if(pref==='dark') document.documentElement.setAttribute('data-theme', 'dark');
+    else document.documentElement.removeAttribute('data-theme');
+  }
+
+  /* ---------- auth ---------- */
+
+  function initAuth(){
+    supa.auth.getSession().then(function(res){
+      authChecking = false;
+      session = res.data.session || null;
+      if(session){ onSignedIn(); } else { render(); }
+    }).catch(function(){
+      authChecking = false;
+      render();
+    });
+    supa.auth.onAuthStateChange(function(event, newSession){
+      if(authChecking) return; // the initial getSession() above already covers first paint
+      var was = session;
+      session = newSession || null;
+      if(session && !was){ onSignedIn(); }
+      else if(!session && was){ onSignedOut(); }
+      else { render(); }
+    });
+  }
+
+  function onSignedIn(){
+    loadTables();
+    subscribeRealtime();
+    render();
+  }
+
+  function onSignedOut(){
+    if(realtimeChannel){ supa.removeChannel(realtimeChannel); realtimeChannel = null; }
+    tablesCache = {};
+    currentTableId = null;
+    authMode = 'signin'; // a returning, signed-out person is almost always signing back in, not registering again
+    authEmailDraft = '';
+    authPasswordDraft = '';
+    authError = null;
+    authNotice = null;
+    render();
+  }
+
+  function signUp(email, password){
+    authBusy = true; authError = null; authNotice = null; render();
+    supa.auth.signUp({email:email, password:password}).then(function(res){
+      authBusy = false;
+      if(res.error){ authError = translateAuthError(res.error); render(); return; }
+      if(res.data.session){ /* email confirmation disabled -- signed in immediately */ }
+      else { authNotice = 'Tili luotu. Tarkista sähköpostisi ja vahvista osoitteesi, jotta voit kirjautua sisään.'; }
+      render();
+    }).catch(function(e){ authBusy=false; authError = 'Verkkovirhe: '+e.message; render(); });
+  }
+
+  function signIn(email, password){
+    authBusy = true; authError = null; authNotice = null; render();
+    supa.auth.signInWithPassword({email:email, password:password}).then(function(res){
+      authBusy = false;
+      if(res.error){ authError = translateAuthError(res.error); render(); return; }
+      // onAuthStateChange fires onSignedIn() and render() already
+    }).catch(function(e){ authBusy=false; authError = 'Verkkovirhe: '+e.message; render(); });
+  }
+
+  function signOut(){
+    supa.auth.signOut();
+  }
+
+  function translateAuthError(err){
+    var m = (err && err.message) || '';
+    if(/Invalid login credentials/i.test(m)) return 'Väärä sähköposti tai salasana.';
+    if(/User already registered/i.test(m)) return 'Tällä sähköpostilla on jo tili — kirjaudu sisään.';
+    if(/Password should be at least/i.test(m)) return 'Salasanan tulee olla vähintään 6 merkkiä.';
+    if(/Email not confirmed/i.test(m)) return 'Vahvista sähköpostiosoitteesi ensin klikkaamalla saamaasi vahvistuslinkkiä.';
+    if(/Unable to validate email address/i.test(m)) return 'Tarkista sähköpostiosoitteen muoto.';
+    return m || 'Jokin meni pieleen. Yritä uudelleen.';
+  }
+
+  /* ---------- persistence layer (Supabase) ---------- */
+
+  // DB row (snake_case) <-> app table object (camelCase), same shape the rest of the UI already expects
+  function rowToTable(row){
+    return {
+      id: row.id,
+      name: row.name,
+      unit: row.unit || '',
+      mode: row.mode,
+      subgroupSize: row.subgroup_size,
+      limitMode: row.limit_mode,
+      usl: row.usl,
+      lsl: row.lsl,
+      target: row.target,
+      tolerance: row.tolerance,
+      values: row.values || [],
+      createdAt: row.created_at,
+      updatedAt: row.updated_at
+    };
+  }
+  function patchToColumns(patch){
+    var map = {subgroupSize:'subgroup_size', limitMode:'limit_mode'};
+    var out = {};
+    Object.keys(patch).forEach(function(k){
+      out[map[k] || k] = patch[k];
+    });
+    return out;
+  }
+
+  function loadTables(){
+    supa.from('measurement_series').select('*').order('updated_at', {ascending:false}).then(function(res){
+      if(res.error){ connError = res.error.message; render(); return; }
+      connError = null;
+      var next = {};
+      (res.data||[]).forEach(function(row){ next[row.id] = rowToTable(row); });
+      tablesCache = next;
+      if(currentTableId && !tablesCache[currentTableId]) currentTableId = null;
+      render();
+    });
+  }
+
+  function subscribeRealtime(){
+    if(!session) return;
+    realtimeChannel = supa.channel('measurement_series-'+session.user.id)
+      .on('postgres_changes', {event:'*', schema:'public', table:'measurement_series', filter:'user_id=eq.'+session.user.id}, function(payload){
+        if(payload.eventType==='DELETE'){
+          delete tablesCache[payload.old.id];
+          if(currentTableId===payload.old.id) currentTableId=null;
+        } else {
+          var t = rowToTable(payload.new);
+          tablesCache[t.id] = t;
+        }
+        render();
+      })
+      .subscribe();
+  }
+
+  function createTable(data){
+    var id = uid(); // used only as a client-side placeholder key until the real row comes back
+    var optimistic = Object.assign({}, data, {
+      id: id, values: [], createdAt: new Date().toISOString(), updatedAt: new Date().toISOString()
+    });
+    tablesCache[id] = optimistic;
+    render();
+
+    var row = Object.assign(patchToColumns(data), {user_id: session.user.id, values: []});
+    supa.from('measurement_series').insert(row).select().single().then(function(res){
+      if(res.error){ connError = res.error.message; delete tablesCache[id]; render(); return; }
+      delete tablesCache[id];
+      var real = rowToTable(res.data);
+      tablesCache[real.id] = real;
+      if(currentTableId===id) currentTableId = real.id;
+      render();
+    });
+    return id;
+  }
+
+  function updateTable(id, patch){
+    if(tablesCache[id]) Object.assign(tablesCache[id], patch, {updatedAt: new Date().toISOString()});
+    render();
+    supa.from('measurement_series').update(patchToColumns(patch)).eq('id', id).then(function(res){
+      if(res.error){ connError = res.error.message; render(); }
+    });
+  }
+
+  function deleteTable(id){
+    delete tablesCache[id];
+    if(currentTableId===id) currentTableId=null;
+    render();
+    supa.from('measurement_series').delete().eq('id', id).then(function(res){
+      if(res.error){ connError = res.error.message; render(); }
+    });
+  }
+
+  /* ---------- rendering ---------- */
+
+  function el(tag, attrs, children){
+    var e = document.createElement(tag);
+    if(attrs) Object.keys(attrs).forEach(function(k){
+      if(k==='class') e.className = attrs[k];
+      else if(k==='html') e.innerHTML = attrs[k];
+      else if(k.indexOf('on')===0 && typeof attrs[k]==='function') e.addEventListener(k.slice(2), attrs[k]);
+      else e.setAttribute(k, attrs[k]);
+    });
+    (children||[]).forEach(function(c){ if(c!=null) e.appendChild(typeof c==='string' ? document.createTextNode(c) : c); });
+    return e;
+  }
+  function svgEl(tag, attrs){
+    var e = document.createElementNS('http://www.w3.org/2000/svg', tag);
+    if(attrs) Object.keys(attrs).forEach(function(k){ e.setAttribute(k, attrs[k]); });
+    return e;
+  }
+
+  function sortedTables(){
+    return Object.keys(tablesCache).map(function(id){ return Object.assign({id:id}, tablesCache[id]); })
+      .sort(function(a,b){ return (b.updatedAt||'').localeCompare(a.updatedAt||''); });
+  }
+
+  function render(){
+    topbarRoot.innerHTML = '';
+    topbarRoot.appendChild(renderTopbar());
+    app.innerHTML = '';
+    if(authChecking){
+      app.appendChild(el('div', {class:'auth-loading'}, ['Ladataan…']));
+      return;
+    }
+    if(!session){
+      app.appendChild(renderAuthScreen());
+      return;
+    }
+    app.appendChild(renderSidebar());
+    app.appendChild(renderMain());
+  }
+
+  function renderTopbar(){
+    var right = session
+      ? el('button', {class:'btn btn-sm', onclick:openSettingsModal}, ['⚙ Asetukset'])
+      : null;
+    var bar = el('div', {id:'topbar-inner', style:'display:flex; align-items:center; justify-content:space-between; width:100%;'}, [
+      el('div', {class:'brand'}, [
+        el('div', {class:'brand-mark'}, ['CP']),
+        el('div', {class:'brand-line'}, [
+          el('div', {class:'brand-text'}, ['Kyvykkyysmittari']),
+          el('div', {class:'brand-sub'}, ['· Six Sigma -prosessianalyysi'])
+        ])
+      ]),
+      right
+    ]);
+    return bar;
+  }
+
+  function renderAuthScreen(){
+    // Every state change (a validation error, authBusy toggling, ...) rebuilds this
+    // whole screen from scratch, which would otherwise silently wipe whatever the
+    // person had already typed. authEmailDraft/authPasswordDraft carry the in-progress
+    // values across those re-renders; they're read from the live inputs, not from here.
+    var emailInput = el('input', {type:'email', autocomplete:'email', placeholder:'sinä@esimerkki.fi', value: authEmailDraft});
+    var passInput = el('input', {type:'password', autocomplete: authMode==='signup'?'new-password':'current-password', placeholder:'••••••••', value: authPasswordDraft});
+    emailInput.addEventListener('input', function(){ authEmailDraft = emailInput.value; });
+    passInput.addEventListener('input', function(){ authPasswordDraft = passInput.value; });
+
+    function submit(){
+      var email = emailInput.value.trim();
+      var pass = passInput.value;
+      if(!email || !pass){ authError = 'Täytä sekä sähköposti että salasana.'; render(); return; }
+      if(authMode==='signup') signUp(email, pass); else signIn(email, pass);
+    }
+    emailInput.addEventListener('keydown', function(e){ if(e.key==='Enter'){ e.preventDefault(); passInput.focus(); } });
+    passInput.addEventListener('keydown', function(e){ if(e.key==='Enter'){ e.preventDefault(); submit(); } });
+
+    var card = el('div', {class:'auth-card'}, [
+      el('h1', {}, [authMode==='signup' ? 'Luo tili' : 'Kirjaudu sisään']),
+      el('p', {class:'auth-sub'}, ['Kyvykkyysmittari · Six Sigma -prosessianalyysi. Data tallentuu tilillesi ja on samaa puhelimella ja tietokoneella.']),
+      authError ? el('div', {class:'auth-error'}, [authError]) : null,
+      authNotice ? el('div', {class:'auth-notice'}, [authNotice]) : null,
+      el('div', {class:'auth-field'}, [el('label', {}, ['Sähköposti']), emailInput]),
+      el('div', {class:'auth-field'}, [el('label', {}, ['Salasana']), passInput]),
+      (function(){
+        var attrs = {class:'btn btn-primary btn-full', onclick:submit};
+        if(authBusy) attrs.disabled = 'disabled';
+        return el('button', attrs, [authBusy ? 'Hetki…' : (authMode==='signup' ? 'Luo tili' : 'Kirjaudu sisään')]);
+      })(),
+      el('div', {class:'auth-switch'}, [
+        authMode==='signup' ? 'On jo tili? ' : 'Ei vielä tiliä? ',
+        el('button', {class:'link-btn', onclick:function(){
+          authMode = authMode==='signup' ? 'signin' : 'signup';
+          authError = null; authNotice = null;
+          render();
+        }}, [authMode==='signup' ? 'Kirjaudu sisään' : 'Luo tili'])
+      ])
+    ]);
+    return el('div', {class:'auth-wrap'}, [card]);
+  }
+
+  function deleteAllTables(){
+    tablesCache = {};
+    currentTableId = null;
+    render();
+    supa.from('measurement_series').delete().eq('user_id', session.user.id).then(function(res){
+      if(res.error){ connError = res.error.message; render(); }
+    });
+  }
+
+  function openSettingsModal(){
+    modalRoot.innerHTML = '';
+    var themeOptions = [
+      {v:'system', label:'Laitteen mukaan'},
+      {v:'light', label:'Vaalea'},
+      {v:'dark', label:'Tumma'}
+    ];
+    var btns = themeOptions.map(function(opt){
+      var b = el('button', {class: themePref===opt.v?'active':'', onclick:function(){
+        themePref = opt.v;
+        saveThemePref(opt.v);
+        applyTheme(opt.v);
+        btns.forEach(function(bb, i){ bb.className = themeOptions[i].v===opt.v ? 'active' : ''; });
+      }}, [opt.label]);
+      return b;
+    });
+    var themeToggle = el('div', {class:'mode-toggle'}, btns);
+
+    var dangerBtn = el('button', {class:'btn btn-danger-ghost btn-full', onclick:function(){
+      closeModal();
+      showConfirmModal({
+        title: 'Tyhjennä kaikki tiedot',
+        message: 'Poistetaanko kaikki mittaussarjat ja niiden data pysyvästi? Tätä ei voi perua.',
+        confirmLabel: 'Poista kaikki',
+        danger: true,
+        onConfirm: function(){ deleteAllTables(); }
+      });
+    }}, ['Tyhjennä kaikki tiedot']);
+
+    var signOutBtn = el('button', {class:'btn btn-full', onclick:function(){ closeModal(); signOut(); }}, ['Kirjaudu ulos']);
+
+    var modal = el('div', {class:'modal', style:'max-width:380px;'}, [
+      el('h2', {}, ['Asetukset']),
+      el('div', {class:'field'}, [el('label',{},['Teemaväri']), themeToggle]),
+      el('div', {style:'border-top:1px solid var(--border); margin-top:2px; padding-top:16px; display:flex; flex-direction:column; gap:8px;'}, [
+        el('label', {style:'font-size:11.5px; color:var(--ink-faint); font-weight:600; text-transform:uppercase; letter-spacing:.04em;'}, ['Tili']),
+        el('div', {style:'font-size:13px; color:var(--ink-soft);'}, [session ? session.user.email : '']),
+        signOutBtn
+      ]),
+      el('div', {style:'border-top:1px solid var(--border); margin-top:2px; padding-top:16px; display:flex; flex-direction:column; gap:8px;'}, [
+        el('label', {style:'font-size:11.5px; color:var(--ink-faint); font-weight:600; text-transform:uppercase; letter-spacing:.04em;'}, ['Vaarallinen alue']),
+        dangerBtn
+      ]),
+      el('div', {class:'modal-actions'}, [el('button', {class:'btn', onclick:closeModal}, ['Sulje'])])
+    ]);
+    var overlay = el('div', {class:'modal-overlay', onclick:function(e){ if(e.target===overlay) closeModal(); }}, [modal]);
+    modalRoot.appendChild(overlay);
+  }
+
+  function renderSidebar(){
+    var tables = sortedTables();
+    var sb = el('div', {class:'sidebar'});
+    if(connError){
+      sb.appendChild(el('div', {class:'banner'}, ['Yhteysvirhe: '+connError]));
+    }
+    sb.appendChild(el('button', {class:'btn btn-primary btn-full', onclick:openCreateModal}, ['+ Uusi mittaussarja']));
+    var list = el('div', {class:'table-list'});
+    if(!tables.length){
+      list.appendChild(el('div', {class:'empty-sidebar'}, ['Ei vielä mittaussarjoja. Luo ensimmäinen yllä olevalla painikkeella.']));
+    }
+    tables.forEach(function(t){
+      var stats = computeStats(t);
+      var status = {cls:'neutral', label:'—'};
+      if(stats){
+        var cap = capability(stats, t.usl, t.lsl);
+        status = capabilityStatus(cap);
+      }
+      var item = el('button', {class:'table-item'+(t.id===currentTableId?' active':''), onclick:function(){ currentTableId=t.id; render(); }}, [
+        el('div', {class:'table-item-main'}, [
+          el('div', {class:'table-item-name'}, [t.name || 'Nimetön sarja']),
+          el('div', {class:'table-item-meta'}, [(t.values?t.values.length:0)+' mittausta'])
+        ]),
+        el('span', {class:'badge badge-'+status.cls}, [el('span',{class:'badge-dot', style:'background:currentColor'}), status.label])
+      ]);
+      list.appendChild(item);
+    });
+    sb.appendChild(list);
+    sb.appendChild(el('div', {class:'sidebar-footer'}, ['Data tallentuu automaattisesti.']));
+    return sb;
+  }
+
+  function renderMain(){
+    var main = el('div', {class:'main'});
+    var t = currentTableId ? Object.assign({id:currentTableId}, tablesCache[currentTableId]) : null;
+
+    if(t && t.id !== lastRenderedTableId){
+      // switched to a different table (or opened one for the first time): collapse
+      // per-table UI state rather than carrying it over from whatever was open before
+      specOpen = false;
+      pasteOpen = false;
+      editingKey = null;
+      dataTableOpen = false;
+    }
+    lastRenderedTableId = t ? t.id : null;
+
+    if(!t){
+      main.appendChild(el('div', {class:'empty-state'}, [
+        el('h1', {}, ['Aloita mittaussarjasta']),
+        el('p', {}, ['Luo mittaussarja vasemmalta. Syötä mittaustuloksia sitä mukaa kun niitä kertyy — sovellus laskee normaalijakauman, ohjausrajat, toleranssirajat sekä Cp-, Cpk-, Pp- ja Ppk-tunnusluvut automaattisesti.']),
+        el('button', {class:'btn btn-primary', onclick:openCreateModal}, ['+ Uusi mittaussarja'])
+      ]));
+      return main;
+    }
+
+    var stats = computeStats(t);
+    var cap = stats ? capability(stats, t.usl, t.lsl) : {};
+    var status = stats ? capabilityStatus(cap) : {cls:'neutral', label:'—'};
+
+    main.appendChild(renderHeader(t, status));
+    main.appendChild(renderSpecPanel(t));
+    main.appendChild(renderEntryPanel(t));
+
+    if(!stats){
+      var need = t.mode==='subgroup' ? (2*(t.subgroupSize||2)) : 2;
+      main.appendChild(el('div', {class:'panel'}, [
+        el('div', {class:'insufficient'}, ['Lisää mittaustuloksia tunnuslukujen laskemiseksi (tarvitaan vähintään '+need+' arvoa'+(t.mode==='subgroup'?', eli 2 täyttä alaryhmää':'')+').'])
+      ]));
+      main.appendChild(renderDataTable(t, null, null));
+      return main;
+    }
+
+    main.appendChild(renderKpiGrid(t, stats, cap));
+    main.appendChild(renderCharts(t, stats, cap));
+    main.appendChild(renderDataTable(t, stats, cap));
+    return main;
+  }
+
+  function renderHeader(t, status){
+    var header = el('div', {class:'detail-header'});
+    var titleInput = el('input', {class:'detail-title', value:t.name||'', 'aria-label':'Sarjan nimi'});
+    titleInput.addEventListener('change', function(){ updateTable(t.id, {name: titleInput.value || 'Nimetön sarja'}); });
+    var left = el('div', {}, [
+      el('div', {class:'detail-title-row'}, [
+        titleInput,
+        el('span', {class:'badge badge-'+status.cls}, [el('span',{class:'badge-dot', style:'background:currentColor'}), status.label])
+      ]),
+      el('div', {class:'detail-sub'}, [
+        (t.mode==='subgroup' ? 'Alaryhmät, koko '+(t.subgroupSize||2) : 'Yksittäismittaukset') +
+        (t.unit ? ' · yksikkö '+t.unit : '') +
+        ' · '+(t.values?t.values.length:0)+' arvoa tallennettu'
+      ])
+    ]);
+    var del = el('button', {class:'btn btn-sm btn-danger-ghost', onclick:function(){
+      showConfirmModal({
+        title: 'Poista mittaussarja',
+        message: 'Poistetaanko sarja "'+(t.name||'Nimetön sarja')+'" pysyvästi? Kaikki sen data häviää eikä toimintoa voi perua.',
+        confirmLabel: 'Poista pysyvästi',
+        danger: true,
+        onConfirm: function(){ deleteTable(t.id); }
+      });
+    }}, ['Poista sarja']);
+    header.appendChild(left);
+    header.appendChild(el('div', {class:'header-actions'}, [del]));
+    return header;
+  }
+
+  function specSummaryText(t){
+    if(t.lsl==null && t.usl==null) return 'Ei asetettu';
+    return (t.lsl!=null?fmt(t.lsl,3):'–') + ' … ' + (t.usl!=null?fmt(t.usl,3):'–') + (t.unit?' '+t.unit:'');
+  }
+
+  function renderSpecPanel(t){
+    var panel = el('div', {class:'panel spec-panel'+(specOpen?'':' collapsed')});
+    var toggle = el('button', {class:'spec-toggle', 'aria-expanded': specOpen?'true':'false', onclick:function(){ specOpen=!specOpen; render(); }}, [
+      el('span', {class:'panel-title', style:'margin:0;'}, ['Toleranssirajat']),
+      el('span', {class:'spec-summary'}, [specSummaryText(t)]),
+      el('span', {class:'chevron'}, [specOpen ? '▾ Sulje' : '▸ Muokkaa'])
+    ]);
+    panel.appendChild(toggle);
+    if(!specOpen) return panel;
+
+    var grid = el('div', {class:'spec-grid'});
+
+    var modeToggle = el('div', {class:'mode-toggle'}, [
+      el('button', {class:t.limitMode!=='target'?'active':'', onclick:function(){ updateTable(t.id, {limitMode:'direct'}); }}, ['USL / LSL']),
+      el('button', {class:t.limitMode==='target'?'active':'', onclick:function(){ updateTable(t.id, {limitMode:'target'}); }}, ['Tavoite ± toleranssi'])
+    ]);
+    grid.appendChild(el('div', {class:'field'}, [el('label',{},['Syöttötapa']), modeToggle]));
+
+    if(t.limitMode==='target'){
+      var targetInput = el('input', {type:'text', value: t.target!=null?String(t.target):'', placeholder:'esim. 10.0'});
+      var tolInput = el('input', {type:'text', value: t.tolerance!=null?String(t.tolerance):'', placeholder:'esim. 0.2'});
+      function commitTarget(){
+        var tv = parseNumberToken(targetInput.value);
+        var tol = parseNumberToken(tolInput.value);
+        var patch = {target: tv, tolerance: tol};
+        if(tv!=null && tol!=null){ patch.usl = tv+Math.abs(tol); patch.lsl = tv-Math.abs(tol); }
+        updateTable(t.id, patch);
+      }
+      targetInput.addEventListener('change', commitTarget);
+      tolInput.addEventListener('change', commitTarget);
+      grid.appendChild(el('div', {class:'field'}, [el('label',{},['Tavoitearvo']), targetInput]));
+      grid.appendChild(el('div', {class:'field'}, [el('label',{},['Toleranssi (±)']), tolInput]));
+      grid.appendChild(el('div', {class:'field'}, [
+        el('label',{},['Lasketut rajat']),
+        el('div', {class:'num', style:'padding:7px 0; color:var(--ink-soft); font-size:13px;'}, [
+          (t.lsl!=null?fmt(t.lsl,3):'–')+' … '+(t.usl!=null?fmt(t.usl,3):'–')
+        ])
+      ]));
+    } else {
+      var uslInput = el('input', {type:'text', value: t.usl!=null?String(t.usl):'', placeholder:'esim. 10.2'});
+      var lslInput = el('input', {type:'text', value: t.lsl!=null?String(t.lsl):'', placeholder:'esim. 9.8'});
+      function commitDirect(){
+        var u = parseNumberToken(uslInput.value);
+        var l = parseNumberToken(lslInput.value);
+        var patch = {usl:u, lsl:l};
+        if(u!=null && l!=null){ patch.target=(u+l)/2; patch.tolerance=(u-l)/2; }
+        updateTable(t.id, patch);
+      }
+      uslInput.addEventListener('change', commitDirect);
+      lslInput.addEventListener('change', commitDirect);
+      grid.appendChild(el('div', {class:'field'}, [el('label',{},['USL (yläraja)']), uslInput]));
+      grid.appendChild(el('div', {class:'field'}, [el('label',{},['LSL (alaraja)']), lslInput]));
+    }
+
+    var unitInput = el('input', {type:'text', value:t.unit||'', placeholder:'esim. mm', style:'width:84px;'});
+    unitInput.addEventListener('change', function(){ updateTable(t.id, {unit: unitInput.value}); });
+    grid.appendChild(el('div', {class:'field'}, [el('label',{},['Yksikkö']), unitInput]));
+
+    panel.appendChild(grid);
+    panel.appendChild(el('div', {class:'muted-note'}, ['Vain toinen raja (USL tai LSL) voidaan jättää tyhjäksi yksipuolista toleranssia varten.']));
+    return panel;
+  }
+
+  function renderKpiGrid(t, stats, cap){
+    var grid = el('div', {class:'kpi-grid'});
+    function tile(label, value, cls, note, hero){
+      return el('div', {class:'kpi-tile'+(hero?' hero':'')}, [
+        el('div', {class:'kpi-label'}, [label]),
+        el('div', {class:'kpi-value'+(cls?' '+cls:'')}, [value]),
+        note?el('div',{class:'kpi-note'},[note]):null
+      ]);
+    }
+    grid.appendChild(tile('N', fmtInt(stats.n), '', t.mode==='subgroup'? (stats.k+' alaryhmää') : null));
+    grid.appendChild(tile('Keskiarvo x̄', fmt(stats.grandMean,3)+(t.unit?' '+t.unit:''), ''));
+    grid.appendChild(tile('Sisäinen σ (lyhyt)', fmt(stats.withinSigma,4), '', 'käytetään Cp/Cpk:ssa'));
+    grid.appendChild(tile('Kokonais-σ (pitkä)', fmt(stats.overallSigma,4), '', 'käytetään Pp/Ppk:ssa'));
+    grid.appendChild(tile('Cp', fmtIdx(cap.cp), idxClass(cap.cp), null, true));
+    grid.appendChild(tile('Cpk', fmtIdx(cap.cpk), idxClass(cap.cpk), null, true));
+    grid.appendChild(tile('Pp', fmtIdx(cap.pp), idxClass(cap.pp)));
+    grid.appendChild(tile('Ppk', fmtIdx(cap.ppk), idxClass(cap.ppk)));
+    grid.appendChild(tile('Sigmataso (lyhyt)', sigmaCapFmt(cap.sigmaShort), '', 'Cpk-pohjainen, sis. σ'));
+    grid.appendChild(tile('Sigmataso (pitkä)', sigmaCapFmt(cap.sigmaLong), '', 'Ppk-pohjainen, kok. σ'));
+    grid.appendChild(tile('DPMO / PPM', fmtInt(cap.dpmo), cap.dpmo==null?'':(cap.dpmo>66807?'bad':(cap.dpmo>6210?'warn':'good')), 'virhettä / milj., pitkä aikaväli'));
+    grid.appendChild(tile('Ohjausrajat', fmt(stats.lcl,3)+' … '+fmt(stats.ucl,3), '', 'UCL / LCL'));
+    return grid;
+  }
+
+  /* ---------- SVG charts ---------- */
+
+  function makeChartShell(width, height, padding){
+    var svg = svgEl('svg', {viewBox:'0 0 '+width+' '+height, width:'100%', height:height, role:'img'});
+    return svg;
+  }
+
+  function niceDomain(min, max){
+    if(min===max){ min-=1; max+=1; }
+    var pad = (max-min)*0.12;
+    return [min-pad, max+pad];
+  }
+
+  function renderHistogram(t, stats, cap){
+    var W=520,H=290, padL=46, padR=16, padT=16, padB=32;
+    var innerW=W-padL-padR, innerH=H-padT-padB;
+    var values = stats.allValues;
+    var lo = Math.min.apply(null, values), hi = Math.max.apply(null, values);
+    var extras = [];
+    if(cap.hasU) extras.push(cap.usl);
+    if(cap.hasL) extras.push(cap.lsl);
+    if(t.target!=null) extras.push(t.target);
+    extras.forEach(function(v){ if(v<lo) lo=v; if(v>hi) hi=v; });
+    var dom = niceDomain(lo, hi);
+    var domMin=dom[0], domMax=dom[1];
+
+    var binCount = Math.max(5, Math.min(14, Math.round(Math.sqrt(values.length)*1.3)));
+    var binW = (domMax-domMin)/binCount;
+    var bins = new Array(binCount).fill(0);
+    values.forEach(function(v){
+      var idx = Math.min(binCount-1, Math.max(0, Math.floor((v-domMin)/binW)));
+      bins[idx]++;
+    });
+    var maxCount = Math.max.apply(null, bins);
+
+    var sigma = stats.overallSigma;
+    var peakDensity = normalPDF(stats.grandMean, stats.grandMean, sigma) * values.length * binW;
+    var yMax = Math.max(maxCount, peakDensity) * 1.15 || 1;
+
+    function xPix(v){ return padL + (v-domMin)/(domMax-domMin)*innerW; }
+    function yPix(c){ return padT + innerH - (c/yMax)*innerH; }
+
+    var svg = makeChartShell(W,H);
+
+    // grid + axis
+    var ticks = 4;
+    for(var i=0;i<=ticks;i++){
+      var yv = yMax*i/ticks;
+      var y = yPix(yv);
+      svg.appendChild(svgEl('line', {x1:padL, x2:W-padR, y1:y, y2:y, class:'grid-line'}));
+      var lbl = svgEl('text', {x:padL-8, y:y+3, class:'axis-label', 'text-anchor':'end'});
+      lbl.textContent = Math.round(yv);
+      svg.appendChild(lbl);
+    }
+    svg.appendChild(svgEl('line', {x1:padL, x2:padL, y1:padT, y2:padT+innerH, class:'axis-line'}));
+    svg.appendChild(svgEl('line', {x1:padL, x2:W-padR, y1:padT+innerH, y2:padT+innerH, class:'axis-line'}));
+
+    // x ticks
+    var xTickCount = 5;
+    for(var xt=0; xt<=xTickCount; xt++){
+      var xv = domMin + (domMax-domMin)*xt/xTickCount;
+      var xp = xPix(xv);
+      var xl = svgEl('text', {x:xp, y:padT+innerH+16, class:'axis-label', 'text-anchor':'middle'});
+      xl.textContent = xv.toLocaleString('fi-FI',{maximumFractionDigits:2});
+      svg.appendChild(xl);
+    }
+
+    // bars
+    bins.forEach(function(c, idx){
+      if(c<=0) return;
+      var x0 = domMin + idx*binW;
+      var xpix0 = xPix(x0);
+      var xpix1 = xPix(x0+binW);
+      var ypix = yPix(c);
+      svg.appendChild(svgEl('rect', {
+        x: xpix0+1, y: ypix, width: Math.max(0, xpix1-xpix0-2), height: (padT+innerH-ypix),
+        class:'hist-bar'
+      }));
+    });
+
+    // normal curve
+    var pathPts = [];
+    var steps = 80;
+    for(var s=0; s<=steps; s++){
+      var xv2 = domMin + (domMax-domMin)*s/steps;
+      var dens = normalPDF(xv2, stats.grandMean, sigma) * values.length * binW;
+      pathPts.push(xPix(xv2).toFixed(2)+','+yPix(dens).toFixed(2));
+    }
+    svg.appendChild(svgEl('path', {d:'M'+pathPts.join(' L'), class:'normal-curve'}));
+
+    function vline(v, cls, label){
+      if(v==null || isNaN(v)) return;
+      var x = xPix(v);
+      svg.appendChild(svgEl('line', {x1:x,x2:x,y1:padT,y2:padT+innerH, class:cls}));
+      var t2 = svgEl('text', {x:x, y:padT+10, class:'limit-tag', 'text-anchor':'middle'});
+      t2.textContent = label;
+      svg.appendChild(t2);
+    }
+    if(cap.hasU) vline(cap.usl, 'limit-usl', 'USL');
+    if(cap.hasL) vline(cap.lsl, 'limit-usl', 'LSL');
+    if(t.target!=null) vline(t.target, 'limit-target', 'Tavoite');
+    vline(stats.grandMean, 'limit-center', 'x̄');
+
+    return svg;
+  }
+
+  function renderRunChart(t, stats, cap){
+    var W=520,H=290, padL=46, padR=16, padT=16, padB=32;
+    var innerW=W-padL-padR, innerH=H-padT-padB;
+    var pts = stats.points;
+    var ys = pts.map(function(p){return p.y;});
+    var lo=Math.min.apply(null,ys), hi=Math.max.apply(null,ys);
+    var extra=[stats.ucl, stats.lcl];
+    if(cap.hasU) extra.push(cap.usl);
+    if(cap.hasL) extra.push(cap.lsl);
+    extra.forEach(function(v){ if(v==null||isNaN(v)) return; if(v<lo) lo=v; if(v>hi) hi=v; });
+    var dom = niceDomain(lo,hi);
+    var domMin=dom[0], domMax=dom[1];
+    var xMax = pts.length;
+
+    function xPix(i){ return padL + (xMax<=1?innerW/2:(i-1)/(xMax-1)*innerW); }
+    function yPix(v){ return padT + innerH - (v-domMin)/(domMax-domMin)*innerH; }
+
+    var svg = makeChartShell(W,H);
+
+    var ticks=4;
+    for(var i=0;i<=ticks;i++){
+      var yv = domMin + (domMax-domMin)*i/ticks;
+      var y = yPix(yv);
+      svg.appendChild(svgEl('line', {x1:padL,x2:W-padR,y1:y,y2:y, class:'grid-line'}));
+      var lbl = svgEl('text', {x:padL-8,y:y+3, class:'axis-label','text-anchor':'end'});
+      lbl.textContent = yv.toLocaleString('fi-FI',{maximumFractionDigits:2});
+      svg.appendChild(lbl);
+    }
+    svg.appendChild(svgEl('line', {x1:padL,x2:padL,y1:padT,y2:padT+innerH, class:'axis-line'}));
+    svg.appendChild(svgEl('line', {x1:padL,x2:W-padR,y1:padT+innerH,y2:padT+innerH, class:'axis-line'}));
+
+    function hline(v, cls, label){
+      if(v==null||isNaN(v)) return;
+      var y = yPix(v);
+      svg.appendChild(svgEl('line', {x1:padL,x2:W-padR,y1:y,y2:y, class:cls}));
+      var t2 = svgEl('text', {x:W-padR, y:y-3, class:'limit-tag', 'text-anchor':'end'});
+      t2.textContent = label;
+      svg.appendChild(t2);
+    }
+    if(cap.hasU) hline(cap.usl, 'limit-usl', 'USL');
+    if(cap.hasL) hline(cap.lsl, 'limit-usl', 'LSL');
+    hline(stats.ucl, 'limit-ctrl', 'UCL');
+    hline(stats.lcl, 'limit-ctrl', 'LCL');
+    hline(stats.centerLine, 'limit-center', 'x̄');
+
+    var linePts = pts.map(function(p){ return xPix(p.x).toFixed(2)+','+yPix(p.y).toFixed(2); });
+    svg.appendChild(svgEl('path', {d:'M'+linePts.join(' L'), class:'run-line'}));
+
+    pts.forEach(function(p){
+      var cls='pt-ok';
+      if(cap.hasU && p.y>cap.usl) cls='pt-bad';
+      else if(cap.hasL && p.y<cap.lsl) cls='pt-bad';
+      else if(p.y>stats.ucl || p.y<stats.lcl) cls='pt-warn';
+      svg.appendChild(svgEl('circle', {cx:xPix(p.x), cy:yPix(p.y), r:3, class:cls}));
+    });
+
+    var xt = svgEl('text', {x:padL, y:H-6, class:'axis-label'});
+    xt.textContent = t.mode==='subgroup' ? 'Alaryhmä #' : 'Mittauskerta #';
+    svg.appendChild(xt);
+    var xtEnd = svgEl('text', {x:W-padR, y:H-6, class:'axis-label', 'text-anchor':'end'});
+    xtEnd.textContent = '#'+xMax;
+    svg.appendChild(xtEnd);
+
+    return svg;
+  }
+
+  function renderSecondaryChart(t, stats){
+    var W=520,H=150, padL=46, padR=16, padT=12, padB=22;
+    var innerW=W-padL-padR, innerH=H-padT-padB;
+    var pts = stats.secondaryPoints;
+    if(!pts.length) return el('div', {});
+    var ys = pts.map(function(p){return p.y;});
+    var lo=0, hi=Math.max.apply(null, ys.concat([stats.secondaryUcl||0]));
+    var dom = niceDomain(lo, hi); dom[0]=Math.min(0,dom[0]);
+    var domMin=dom[0], domMax=dom[1]||1;
+    var xMax = Math.max.apply(null, pts.map(function(p){return p.x;}));
+    var xMin = Math.min.apply(null, pts.map(function(p){return p.x;}));
+
+    function xPix(i){ return padL + (xMax<=xMin?innerW/2:(i-xMin)/(xMax-xMin)*innerW); }
+    function yPix(v){ return padT + innerH - (v-domMin)/(domMax-domMin)*innerH; }
+
+    var svg = makeChartShell(W,H);
+    svg.appendChild(svgEl('line', {x1:padL,x2:padL,y1:padT,y2:padT+innerH, class:'axis-line'}));
+    svg.appendChild(svgEl('line', {x1:padL,x2:W-padR,y1:padT+innerH,y2:padT+innerH, class:'axis-line'}));
+
+    function hline(v, cls, label){
+      if(v==null||isNaN(v)) return;
+      var y = yPix(v);
+      svg.appendChild(svgEl('line', {x1:padL,x2:W-padR,y1:y,y2:y, class:cls}));
+      var t2 = svgEl('text', {x:W-padR, y:y-3, class:'limit-tag', 'text-anchor':'end'});
+      t2.textContent = label;
+      svg.appendChild(t2);
+    }
+    hline(stats.secondaryUcl, 'limit-ctrl', 'UCL');
+    hline(stats.secondaryCenter, 'limit-center', t.mode==='subgroup'?'R̄':'MR̄');
+    if(stats.secondaryLcl>0) hline(stats.secondaryLcl, 'limit-ctrl', 'LCL');
+
+    var linePts = pts.map(function(p){ return xPix(p.x).toFixed(2)+','+yPix(p.y).toFixed(2); });
+    svg.appendChild(svgEl('path', {d:'M'+linePts.join(' L'), class:'run-line'}));
+    pts.forEach(function(p){
+      var cls = (p.y>stats.secondaryUcl) ? 'pt-warn' : 'pt-ok';
+      svg.appendChild(svgEl('circle', {cx:xPix(p.x), cy:yPix(p.y), r:2.6, class:cls}));
+    });
+    return svg;
+  }
+
+  function renderCharts(t, stats, cap){
+    var wrap = el('div', {});
+
+    var row = el('div', {class:'charts-row'});
+    var histPanel = el('div', {class:'panel'});
+    histPanel.appendChild(el('div', {class:'panel-title'}, ['Jakauma ja normaalikäyrä']));
+    histPanel.appendChild(renderHistogram(t, stats, cap));
+    histPanel.appendChild(el('div', {class:'chart-caption'}, [
+      el('span',{class:'legend-item'},[el('span',{class:'legend-swatch',style:'background:var(--accent-strong)'}),'Normaalikäyrä']),
+      el('span',{class:'legend-item'},[el('span',{class:'legend-swatch',style:'background:var(--bad)'}),'USL / LSL']),
+      el('span',{class:'legend-item'},[el('span',{class:'legend-swatch',style:'background:var(--accent)'}),'Keskiarvo'])
+    ]));
+
+    var runPanel = el('div', {class:'panel'});
+    runPanel.appendChild(el('div', {class:'panel-title'}, [t.mode==='subgroup' ? 'Ohjauskortti (X̄)' : 'Ohjauskortti (yksittäisarvot)']));
+    runPanel.appendChild(renderRunChart(t, stats, cap));
+    runPanel.appendChild(el('div', {class:'chart-caption'}, [
+      el('span',{class:'legend-item'},[el('span',{class:'legend-swatch',style:'background:var(--warn)'}),'Ohjausrajat (UCL/LCL)']),
+      el('span',{class:'legend-item'},[el('span',{class:'legend-dot',style:'background:var(--bad)'}),'Toleranssin ylitys']),
+      el('span',{class:'legend-item'},[el('span',{class:'legend-dot',style:'background:var(--warn)'}),'Ohjausrajan ylitys'])
+    ]));
+    runPanel.appendChild(el('div', {style:'margin-top:14px; padding-top:14px; border-top:1px solid var(--border);'}, [
+      el('div', {class:'panel-title', style:'margin-bottom:8px;'}, [stats.secondaryLabel]),
+      renderSecondaryChart(t, stats)
+    ]));
+
+    row.appendChild(histPanel);
+    row.appendChild(runPanel);
+    wrap.appendChild(row);
+    return wrap;
+  }
+
+  /* ---------- data entry ---------- */
+
+  function renderEntryPanel(t){
+    var size = groupSize(t);
+    var panel = el('div', {class:'panel entry-panel-sticky'});
+    panel.appendChild(el('div', {class:'panel-title'}, [t.mode==='subgroup' ? 'Lisää alaryhmä ('+size+' arvoa)' : 'Lisää mittaus']));
+
+    var entryGrid = el('div', {class:'entry-grid'});
+    var inputs = [];
+    for(var i=0;i<size;i++){
+      var inp = el('input', {type:'text', placeholder: t.unit || 'arvo', 'aria-label':'Arvo '+(i+1)});
+      inputs.push(inp);
+      entryGrid.appendChild(inp);
+    }
+    function submitQuick(){
+      var vals = inputs.map(function(inp){ return parseNumberToken(inp.value); });
+      if(vals.some(function(v){ return v==null; })){ return; }
+      var newValues = (t.values||[]).concat(vals);
+      updateTable(t.id, {values:newValues});
+      inputs.forEach(function(inp){ inp.value=''; });
+      inputs[0].focus();
+    }
+    inputs.forEach(function(inp, idx){
+      inp.addEventListener('keydown', function(e){
+        if(e.key==='Enter'){
+          e.preventDefault();
+          if(idx<inputs.length-1) inputs[idx+1].focus();
+          else submitQuick();
+        }
+      });
+    });
+    var addBtn = el('button', {class:'btn btn-primary btn-sm', onclick:submitQuick}, [t.mode==='subgroup' ? 'Lisää alaryhmä' : 'Lisää']);
+    entryGrid.appendChild(addBtn);
+    panel.appendChild(entryGrid);
+
+    var toggleBtn = el('button', {class:'link-btn', style:'margin-top:10px;', onclick:function(){ pasteOpen=!pasteOpen; render(); }},
+      [pasteOpen ? '– Piilota liitä useita' : '+ Liitä useita arvoja (esim. Sheetsistä)']);
+    panel.appendChild(toggleBtn);
+
+    if(pasteOpen){
+      var pasteWrap = el('div', {class:'paste-area'});
+      var ta = el('textarea', {placeholder: t.mode==='subgroup'
+        ? 'Yksi alaryhmä per rivi, arvot välilyönnillä/sarkaimella erotettuna, esim.\n10.1  10.2  9.9  10.0  10.05'
+        : 'Yksi arvo per rivi (tai liitä sarake suoraan Sheetsistä)'});
+      pasteWrap.appendChild(ta);
+      var pasteActions = el('div', {style:'display:flex; gap:8px; margin-top:8px;'});
+      var appendBtn = el('button', {class:'btn btn-sm', onclick:function(){ handlePaste(t, ta.value, false); ta.value=''; }}, ['Lisää dataan']);
+      var replaceBtn = el('button', {class:'btn btn-sm btn-ghost', onclick:function(){
+        var text = ta.value;
+        showConfirmModal({
+          title: 'Korvaa kaikki data',
+          message: 'Korvataanko koko nykyinen data ('+((t.values||[]).length)+' arvoa) liitetyllä datalla? Vanhaa dataa ei voi palauttaa.',
+          confirmLabel: 'Korvaa data',
+          danger: true,
+          onConfirm: function(){ handlePaste(t, text, true); ta.value=''; }
+        });
+      }}, ['Korvaa kaikki']);
+      pasteActions.appendChild(appendBtn);
+      pasteActions.appendChild(replaceBtn);
+      pasteWrap.appendChild(pasteActions);
+      panel.appendChild(pasteWrap);
+    }
+
+    return panel;
+  }
+
+  function handlePaste(t, text, replace){
+    var size = groupSize(t);
+    var parsed = [];
+    if(t.mode==='subgroup'){
+      text.split('\n').forEach(function(line){
+        if(!line.trim()) return;
+        var toks = tokenizeNumbers(line).map(parseNumberToken).filter(function(v){return v!=null;});
+        toks.forEach(function(v){ parsed.push(v); });
+      });
+    } else {
+      parsed = tokenizeNumbers(text).map(parseNumberToken).filter(function(v){ return v!=null; });
+    }
+    if(!parsed.length) return;
+    var base = replace ? [] : (t.values||[]);
+    updateTable(t.id, {values: base.concat(parsed)});
+  }
+
+  function renderDataTable(t, stats, cap){
+    var panel = el('div', {class:'panel'});
+    panel.appendChild(el('div', {class:'panel-title data-panel-title-row'}, [
+      el('span',{},['Tallennettu data ('+(t.values?t.values.length:0)+')']),
+      el('div', {class:'data-panel-actions'}, [
+        (t.values&&t.values.length) ? el('button', {class:'link-btn', onclick:function(){
+          showConfirmModal({
+            title: 'Tyhjennä data',
+            message: 'Tyhjennetäänkö koko data ('+t.values.length+' arvoa) tästä sarjasta? Toimintoa ei voi perua.',
+            confirmLabel: 'Tyhjennä kaikki',
+            danger: true,
+            onConfirm: function(){ updateTable(t.id, {values:[]}); }
+          });
+        }}, ['Tyhjennä kaikki']) : null,
+        el('button', {class:'data-panel-toggle', onclick:function(){ dataTableOpen = !dataTableOpen; render(); }}, [
+          dataTableOpen ? '▾ Piilota' : '▸ Näytä'
+        ])
+      ])
+    ]));
+    var body = el('div', {class:'data-body' + (dataTableOpen ? '' : ' collapsed')});
+    panel.appendChild(body);
+    if(!t.values || !t.values.length){
+      body.appendChild(el('div', {class:'muted-note'}, ['Ei vielä dataa.']));
+      return panel;
+    }
+    var wrap = el('div', {class:'data-table-wrap'});
+    var table = el('table', {class:'data-table'});
+    var size = groupSize(t);
+    var thead = el('thead', {}, [el('tr', {}, [
+      el('th', {}, [t.mode==='subgroup' ? 'Alaryhmä' : '#']),
+      el('th', {}, [t.mode==='subgroup' ? 'Arvot' : 'Arvo']),
+      el('th', {}, [''])
+    ])]);
+    table.appendChild(thead);
+    var tbody = el('tbody');
+    var groups = [];
+    if(t.mode==='subgroup'){
+      var k = Math.floor(t.values.length/size);
+      for(var g=0; g<Math.ceil(t.values.length/size); g++){
+        groups.push({idx:g+1, vals:t.values.slice(g*size,(g+1)*size), start:g*size});
+      }
+    } else {
+      groups = t.values.map(function(v,i){ return {idx:i+1, vals:[v], start:i}; });
+    }
+    groups.slice().reverse().forEach(function(g){
+      var flagged = '';
+      if(cap){
+        g.vals.forEach(function(v){
+          if(cap.hasU && v>cap.usl) flagged='out-spec';
+          else if(cap.hasL && v<cap.lsl) flagged='out-spec';
+        });
+      }
+      var key = t.id+'|'+g.start;
+      var valueCell, actionCell;
+
+      if(editingKey === key){
+        var editInputs = g.vals.map(function(v){ return el('input', {type:'text', value:String(v), class:'edit-cell-input'}); });
+        var editErr = el('div', {class:'edit-error', hidden:true}, ['Tarkista arvot – kaikkien tulee olla numeroita.']);
+        function saveEdit(){
+          var newVals = editInputs.map(function(inp){ return parseNumberToken(inp.value); });
+          var invalid = false;
+          editInputs.forEach(function(inp, i){
+            if(newVals[i]==null){ inp.classList.add('input-error'); invalid = true; }
+            else inp.classList.remove('input-error');
+          });
+          if(invalid){ editErr.hidden = false; return; }
+          var nv = t.values.slice();
+          for(var i=0;i<newVals.length;i++) nv[g.start+i] = newVals[i];
+          editingKey = null;
+          updateTable(t.id, {values: nv});
+        }
+        function cancelEdit(){ editingKey = null; render(); }
+        editInputs.forEach(function(inp, idx){
+          inp.addEventListener('input', function(){ inp.classList.remove('input-error'); editErr.hidden = true; });
+          inp.addEventListener('keydown', function(e){
+            if(e.key==='Enter'){ e.preventDefault(); saveEdit(); }
+            else if(e.key==='Escape'){ e.preventDefault(); cancelEdit(); }
+          });
+        });
+        valueCell = el('td', {}, [
+          el('div', {style:'display:flex; gap:5px; flex-wrap:wrap;'}, editInputs),
+          editErr
+        ]);
+        actionCell = el('td', {}, [el('div', {style:'display:flex; gap:4px;'}, [
+          el('button', {class:'btn btn-sm btn-primary', onclick:saveEdit}, ['Tallenna']),
+          el('button', {class:'btn btn-sm btn-ghost', onclick:cancelEdit}, ['Peruuta'])
+        ])]);
+      } else {
+        valueCell = el('td', {class: flagged}, [g.vals.map(function(v){ return fmt(v, 3); }).join('  ·  ')]);
+        actionCell = el('td', {}, [
+          el('button', {class:'row-edit', title:'Muokkaa', onclick:function(){ editingKey = key; render(); }}, ['✎']),
+          el('button', {class:'row-del', title:'Poista', onclick:function(){
+            var nv = t.values.slice();
+            nv.splice(g.start, g.vals.length);
+            updateTable(t.id, {values: nv});
+          }}, ['✕'])
+        ]);
+      }
+
+      var tr = el('tr', {}, [
+        el('td', {}, [String(g.idx)]),
+        valueCell,
+        actionCell
+      ]);
+      tbody.appendChild(tr);
+    });
+    table.appendChild(tbody);
+    wrap.appendChild(table);
+    body.appendChild(wrap);
+    return panel;
+  }
+
+  /* ---------- create modal ---------- */
+
+  function openCreateModal(){
+    modalRoot.innerHTML = '';
+    var mode = 'individual';
+    var limitMode = 'direct';
+
+    var nameInput = el('input', {type:'text', placeholder:'esim. Akselin halkaisija'});
+    var unitInput = el('input', {type:'text', placeholder:'esim. mm'});
+    var modeSelect = el('select', {}, [
+      el('option', {value:'individual'}, ['Yksittäismittaukset']),
+      el('option', {value:'subgroup'}, ['Alaryhmät (Xbar-R)'])
+    ]);
+    var sizeField = el('div', {class:'field', style:'display:none;'});
+    var sizeSelect = el('select', {});
+    for(var s=2;s<=10;s++) sizeSelect.appendChild(el('option', {value:s}, [String(s)+' kpl / alaryhmä']));
+    sizeField.appendChild(el('label', {}, ['Alaryhmän koko']));
+    sizeField.appendChild(sizeSelect);
+
+    modeSelect.addEventListener('change', function(){
+      mode = modeSelect.value;
+      sizeField.style.display = mode==='subgroup' ? '' : 'none';
+    });
+
+    var limitToggle = el('div', {class:'mode-toggle'}, [
+      el('button', {class:'active', type:'button', onclick:function(){ limitMode='direct'; limitToggle.children[0].classList.add('active'); limitToggle.children[1].classList.remove('active'); directFields.style.display=''; targetFields.style.display='none'; }}, ['USL / LSL']),
+      el('button', {type:'button', onclick:function(){ limitMode='target'; limitToggle.children[1].classList.add('active'); limitToggle.children[0].classList.remove('active'); directFields.style.display='none'; targetFields.style.display=''; }}, ['Tavoite ± tol.'])
+    ]);
+
+    var uslInput = el('input', {type:'text', placeholder:'esim. 10.2'});
+    var lslInput = el('input', {type:'text', placeholder:'esim. 9.8'});
+    var directFields = el('div', {class:'modal-row'}, [
+      el('div', {class:'field'}, [el('label',{},['USL']), uslInput]),
+      el('div', {class:'field'}, [el('label',{},['LSL']), lslInput])
+    ]);
+
+    var targetInput = el('input', {type:'text', placeholder:'esim. 10.0'});
+    var tolInput = el('input', {type:'text', placeholder:'esim. 0.2'});
+    var targetFields = el('div', {class:'modal-row', style:'display:none;'}, [
+      el('div', {class:'field'}, [el('label',{},['Tavoitearvo']), targetInput]),
+      el('div', {class:'field'}, [el('label',{},['Toleranssi ±']), tolInput])
+    ]);
+
+    var cancelBtn = el('button', {class:'btn', onclick:closeModal}, ['Peruuta']);
+    var createBtn = el('button', {class:'btn btn-primary', onclick:function(){
+      var data = {
+        name: nameInput.value.trim() || 'Nimetön sarja',
+        unit: unitInput.value.trim(),
+        mode: mode,
+        subgroupSize: mode==='subgroup' ? Number(sizeSelect.value) : null,
+        limitMode: limitMode,
+        usl: null, lsl: null, target: null, tolerance: null
+      };
+      if(limitMode==='direct'){
+        data.usl = parseNumberToken(uslInput.value);
+        data.lsl = parseNumberToken(lslInput.value);
+        if(data.usl!=null && data.lsl!=null){ data.target=(data.usl+data.lsl)/2; data.tolerance=(data.usl-data.lsl)/2; }
+      } else {
+        data.target = parseNumberToken(targetInput.value);
+        data.tolerance = parseNumberToken(tolInput.value);
+        if(data.target!=null && data.tolerance!=null){ data.usl=data.target+Math.abs(data.tolerance); data.lsl=data.target-Math.abs(data.tolerance); }
+      }
+      var id = createTable(data);
+      closeModal();
+      currentTableId = id;
+      render();
+    }}, ['Luo sarja']);
+
+    var modal = el('div', {class:'modal'}, [
+      el('h2', {}, ['Uusi mittaussarja']),
+      el('div', {class:'field'}, [el('label',{},['Nimi']), nameInput]),
+      el('div', {class:'modal-row'}, [
+        el('div', {class:'field', style:'flex:2;'}, [el('label',{},['Mittaustapa']), modeSelect]),
+        el('div', {class:'field', style:'flex:1;'}, [el('label',{},['Yksikkö']), unitInput])
+      ]),
+      sizeField,
+      el('div', {class:'field'}, [el('label',{},['Toleranssirajojen syöttötapa']), limitToggle]),
+      directFields,
+      targetFields,
+      el('div', {class:'modal-actions'}, [cancelBtn, createBtn])
+    ]);
+    var overlay = el('div', {class:'modal-overlay', onclick:function(e){ if(e.target===overlay) closeModal(); }}, [modal]);
+    modalRoot.appendChild(overlay);
+    nameInput.focus();
+  }
+  function closeModal(){ modalRoot.innerHTML=''; }
+
+  /**
+   * Native window.confirm()/alert() do not reliably work inside a published
+   * artifact's sandboxed frame (clicks can silently no-op instead of showing
+   * the dialog), so every "are you sure?" prompt in this app goes through
+   * this in-page modal instead.
+   */
+  function showConfirmModal(opts){
+    modalRoot.innerHTML = '';
+    var confirmBtn = el('button', {class:'btn '+(opts.danger?'btn-danger':'btn-primary'), onclick:function(){
+      closeModal();
+      opts.onConfirm();
+    }}, [opts.confirmLabel || 'Vahvista']);
+    var cancelBtn = el('button', {class:'btn', onclick:closeModal}, ['Peruuta']);
+    var modal = el('div', {class:'modal', style:'max-width:400px;'}, [
+      el('h2', {}, [opts.title || 'Vahvista toiminto']),
+      el('p', {style:'margin:0; color:var(--ink-soft); font-size:13.5px; line-height:1.5;'}, [opts.message]),
+      el('div', {class:'modal-actions'}, [cancelBtn, confirmBtn])
+    ]);
+    var overlay = el('div', {class:'modal-overlay', onclick:function(e){ if(e.target===overlay) closeModal(); }}, [modal]);
+    modalRoot.appendChild(overlay);
+    confirmBtn.focus();
+  }
+
+  /* ---------- boot ---------- */
+  pasteOpen = false;
+  applyTheme(themePref);
+  render();
+  initAuth();
+
+})();
+</script>
+</body>
+</html>
